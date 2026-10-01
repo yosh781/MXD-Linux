@@ -1,0 +1,1 @@
+This is a custom build of Linux based on antiX and MX Linux. The build lacks Systemd and Elogind. The Dinit initialization system is used. The system uses the author's fork of Enlightenment E27 - Enlightenment-mxd - as DE.
