@@ -1,36 +1,58 @@
-# This is a basic workflow to help you get started with Actions
+name: Build APT Repository
 
-name: CI
-
-# Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the "main" branch
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-
-  # Allows you to run this workflow manually from the Actions tab
+    branches: [ main ]
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
-  # This workflow contains a single job called "build"
   build:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world!
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
 
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
+      - name: Build APT repo
+        uses: morph027/apt-repo-action@v3
+        id: create-apt-repo
+        with:
+          repo-name: mxd-linux
+          signing-key: ${{ secrets.SIGNING_KEY }}
+          scan-dir: repo/
+          architectures: amd64
+          codename: stable
+
+      - name: Add index.html
         run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+          cat > ${{ steps.create-apt-repo.outputs.dir }}/index.html <<'EOF'
+          <!DOCTYPE html>
+          <html><head><title>MXD-Linux APT Repository</title></head>
+          <body>
+          <h1>MXD-Linux APT Repository</h1>
+          <pre>deb https://yosh781.github.io/MXD-Linux stable main</pre>
+          </body></html>
+          EOF
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ steps.create-apt-repo.outputs.dir }}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
