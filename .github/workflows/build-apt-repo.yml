@@ -40,7 +40,9 @@ jobs:
           <pre>deb https://yosh781.github.io/MXD-Linux stable main</pre>
           </body></html>
           EOF
-
+      - name: Copy public.key into repo
+        run: |
+          cp public.key ${{ steps.create-apt-repo.outputs.dir }}/public.key
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
